@@ -65,6 +65,10 @@ python app.py
 - 前端为纯 HTML/CSS/JavaScript，无需任何前端构建工具。
 - 数据与界面设置均保存在本机，不依赖任何第三方网络服务。
 
+## 🤖 关于本项目（AI 开发）
+
+本项目全程借助 AI 助手 [ChatGPT](https://chatgpt.com/) 开发完成：从需求梳理、功能设计、代码实现到文档编写，均由 ChatGPT 辅助生成，以此体现对 AI 工具的熟练运用。
+
 ## 📄 License
 
 [MIT](LICENSE)
