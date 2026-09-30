@@ -28,7 +28,6 @@ except ImportError:
     raise SystemExit(1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.dirname(BASE_DIR)
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 SETTINGS_PATH = os.environ.get('TDGL_SETTINGS') or os.path.join(BASE_DIR, 'settings.json')
 
@@ -73,9 +72,6 @@ def sanitize_settings(data):
 
 
 def default_data_path():
-    parent = os.path.join(DATA_DIR, '投递.xlsx')
-    if os.path.exists(parent):
-        return parent
     return os.path.join(BASE_DIR, 'data', '投递.xlsx')
 
 
