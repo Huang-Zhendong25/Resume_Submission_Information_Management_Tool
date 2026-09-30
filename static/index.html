@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投递管理</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">投</div>
+    <div class="brand-text">
+      <h1>投递管理</h1>
+      <p>记录每一次投递 · 清晰掌握进度</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <input id="search-input" class="search-input" type="text" placeholder="搜索岗位 / 企业名称">
+    <select id="sort-select" class="sort-select" title="排序方式">
+      <option value="asc">投递时间 早→晚</option>
+      <option value="desc">投递时间 晚→早</option>
+    </select>
+    <button id="btn-settings" class="btn btn-icon" title="设置">⚙</button>
+    <button id="btn-add" class="btn btn-primary">＋ 新增企业</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="panel" data-panel="active">
+    <div class="panel-head">
+      <div class="panel-title">
+        <button class="collapse-btn" data-action="collapse" data-panel="active" title="收起/展开">▾</button>
+        <span class="dot dot-active"></span>
+        <h2>进行中</h2>
+        <span id="active-count" class="count">0</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-action="add">＋ 新增</button>
+    </div>
+    <div id="active-list" class="list"></div>
+  </section>
+
+  <section class="panel" data-panel="idle">
+    <div class="panel-head">
+      <div class="panel-title">
+        <button class="collapse-btn" data-action="collapse" data-panel="idle" title="收起/展开">▾</button>
+        <span class="dot dot-idle"></span>
+        <h2>长期无状态更新</h2>
+        <span id="idle-count" class="count">0</span>
+      </div>
+    </div>
+    <div id="idle-list" class="list"></div>
+  </section>
+
+  <section class="panel" data-panel="eliminated">
+    <div class="panel-head">
+      <div class="panel-title">
+        <button class="collapse-btn" data-action="collapse" data-panel="eliminated" title="收起/展开">▾</button>
+        <span class="dot dot-elim"></span>
+        <h2>已淘汰</h2>
+        <span id="elim-count" class="count">0</span>
+      </div>
+    </div>
+    <div id="elim-list" class="list"></div>
+  </section>
+</main>
+
+<div id="toast" class="toast"></div>
+<div id="modal-root"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

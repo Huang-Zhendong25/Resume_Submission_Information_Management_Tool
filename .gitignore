@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 运行时设置
+settings.json
+
+# 数据文件（个人投递数据，不上传）
+*.xlsx
+~$*.xlsx
+data/
+
+# 其他
+.DS_Store
+Thumbs.db
+.env
