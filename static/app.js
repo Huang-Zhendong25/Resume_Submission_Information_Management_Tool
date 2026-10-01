@@ -145,6 +145,31 @@ function matches(it) {
 }
 function filtered(arr) { return sortItems(arr).filter(matches); }
 
+function focusedItems() {
+  return sortItems(state.active.concat(state.idle, state.eliminated).filter(function (it) { return it.focus; }));
+}
+function renderFocusSummary() {
+  const container = document.getElementById('focus-summary');
+  if (!container) return;
+  const items = focusedItems();
+  if (!items.length) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  document.getElementById('focus-summary-count').textContent = items.length;
+  document.getElementById('focus-summary-list').innerHTML = items.map(function (it) {
+    const note = it.focusNote || '重点关注';
+    return '<button class="focus-summary-item" data-action="focus-jump" data-id="' + it.id + '">'
+      + '<span class="fs-name">' + esc(it.name) + '</span>'
+      + '<span class="fs-sep">·</span>'
+      + '<span class="fs-note">' + esc(note) + '</span>'
+      + '</button>';
+  }).join('');
+}
+function layoutSummary() {
+  const tb = document.querySelector('.topbar');
+  const fs = document.getElementById('focus-summary');
+  if (tb && fs) fs.style.top = (tb.offsetHeight + 8) + 'px';
+}
+
 function render() {
   document.getElementById('active-count').textContent = state.active.length;
   document.getElementById('idle-count').textContent = state.idle.length;
@@ -152,6 +177,7 @@ function render() {
   document.getElementById('active-list').innerHTML = state.active.length ? filtered(state.active).map(activeCard).join('') : emptyHtml('暂无进行中的投递，点击右上角「新增企业」开始记录');
   document.getElementById('idle-list').innerHTML = state.idle.length ? filtered(state.idle).map(idleCard).join('') : emptyHtml('暂无长期无状态更新的企业');
   document.getElementById('elim-list').innerHTML = state.eliminated.length ? filtered(state.eliminated).map(elimCard).join('') : emptyHtml('还没有被淘汰的企业');
+  renderFocusSummary();
 }
 
 function findItem(id) {
@@ -208,6 +234,7 @@ function applySettings() {
   document.documentElement.style.setProperty('--remark-bg', SETTINGS.remarkBg);
   const sel = document.getElementById('sort-select');
   if (sel) sel.value = SETTINGS.sort;
+  layoutSummary();
 }
 
 function openSettings() {
@@ -545,6 +572,23 @@ document.addEventListener('click', function (e) {
     });
     return;
   }
+  if (action === 'focus-jump') {
+    const card = document.querySelector('.card[data-id="' + id + '"]');
+    if (card) {
+      const panel = card.closest('.panel');
+      if (panel && panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+        const pname = panel.getAttribute('data-panel');
+        if (pname) collapsed[pname] = false;
+        const cb = panel.querySelector('.collapse-btn');
+        if (cb) cb.textContent = '▾';
+      }
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('flash');
+      setTimeout(function () { card.classList.remove('flash'); }, 1400);
+    }
+    return;
+  }
   if (action === 'focus') {
     if (!f) return;
     if (f.it.focus) { mutate(function () { f.it.focus = false; }); }
@@ -606,6 +650,7 @@ document.getElementById('search-input').addEventListener('input', function () {
   searchQuery = this.value.trim();
   render();
 });
+window.addEventListener('resize', layoutSummary);
 
 async function load() {
   try {
