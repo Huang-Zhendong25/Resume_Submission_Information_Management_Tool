@@ -42,6 +42,7 @@ DEFAULT_SETTINGS = {
     'bgGradA': '#e8f0fe',
     'bgGradB': '#f3e8ff',
     'remarkBg': '#eef2ff',
+    'summaryBg': '#fffbeb',
     'sort': 'asc',
     'dataPath': '',
 }
@@ -63,7 +64,7 @@ def sanitize_settings(data):
         d['bgType'] = DEFAULT_SETTINGS['bgType']
     if d['sort'] not in ('asc', 'desc'):
         d['sort'] = DEFAULT_SETTINGS['sort']
-    for key in ('bgSolid', 'bgGradA', 'bgGradB', 'remarkBg'):
+    for key in ('bgSolid', 'bgGradA', 'bgGradB', 'remarkBg', 'summaryBg'):
         v = d.get(key)
         if not isinstance(v, str) or not re.match(r'^#[0-9a-fA-F]{6}$', v):
             d[key] = DEFAULT_SETTINGS[key]

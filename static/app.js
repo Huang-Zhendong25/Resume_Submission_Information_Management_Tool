@@ -1,16 +1,17 @@
 'use strict';
 
-let SETTINGS = { fontScale: 100, bgType: 'solid', bgSolid: '#f3f5fa', bgGradA: '#e8f0fe', bgGradB: '#f3e8ff', remarkBg: '#eef2ff', sort: 'asc', dataPath: '' };
+let SETTINGS = { fontScale: 100, bgType: 'solid', bgSolid: '#f3f5fa', bgGradA: '#e8f0fe', bgGradB: '#f3e8ff', remarkBg: '#eef2ff', summaryBg: '#fffbeb', sort: 'asc', dataPath: '' };
 let META = { statuses: [], reasons: [] };
 let state = { active: [], idle: [], eliminated: [] };
 let idSeq = 0;
 let searchQuery = '';
 const collapsed = { active: false, idle: false, eliminated: false };
 
-const DEFAULT_SETTINGS = { fontScale: 100, bgType: 'solid', bgSolid: '#f3f5fa', bgGradA: '#e8f0fe', bgGradB: '#f3e8ff', remarkBg: '#eef2ff', sort: 'asc', dataPath: '' };
+const DEFAULT_SETTINGS = { fontScale: 100, bgType: 'solid', bgSolid: '#f3f5fa', bgGradA: '#e8f0fe', bgGradB: '#f3e8ff', remarkBg: '#eef2ff', summaryBg: '#fffbeb', sort: 'asc', dataPath: '' };
 const SOLID_PRESETS = ['#f3f5fa', '#eef4fb', '#eef7f1', '#fdf3f4', '#f7f5ef', '#ffffff'];
 const GRAD_PRESETS = [['#e8f0fe', '#f3e8ff'], ['#e0f7fa', '#e8f5e9'], ['#fce4ec', '#fff3e0'], ['#e3f2fd', '#f3e5f5']];
 const REMARK_PRESETS = ['#eef2ff', '#fef9c3', '#dcfce7', '#fce7f3', '#fde68a', '#e2e8f0', '#ffffff'];
+const SUMMARY_PRESETS = ['#fffbeb', '#fef3c7', '#eef2ff', '#fce7f3', '#dcfce7', '#ffffff'];
 
 const STATUS_COLORS = {
   '线下投递': { bg: '#eef2ff', fg: '#4f46e5', bd: '#c7d2fe' },
@@ -232,6 +233,7 @@ function applySettings() {
     document.body.style.backgroundAttachment = '';
   }
   document.documentElement.style.setProperty('--remark-bg', SETTINGS.remarkBg);
+  document.documentElement.style.setProperty('--summary-bg', SETTINGS.summaryBg);
   const sel = document.getElementById('sort-select');
   if (sel) sel.value = SETTINGS.sort;
   layoutSummary();
@@ -253,6 +255,9 @@ function openSettings() {
     + '<div class="setting-row"><label>备注背景色（仅备注块底色）</label>'
     + '<div id="set-remark-swatches" class="swatches"></div>'
     + '<div class="color-pair"><input type="color" id="set-remark-color" value="' + cur.remarkBg + '" title="自定义备注底色"> <span class="hint">自定义备注底色</span></div></div>'
+    + '<div class="setting-row"><label>摘要栏背景色（顶部重点关注栏）</label>'
+    + '<div id="set-summary-swatches" class="swatches"></div>'
+    + '<div class="color-pair"><input type="color" id="set-summary-color" value="' + cur.summaryBg + '" title="自定义摘要栏底色"> <span class="hint">自定义摘要栏底色</span></div></div>'
     + '<div class="setting-row"><label>数据文件（Excel 路径）</label>'
     + '<input type="text" id="set-datapath" placeholder="留空则自动创建默认文件" value="' + esc(cur.dataPath || '') + '">'
     + '<div class="hint" style="margin-top:6px">点击「浏览」选择已有 Excel 文件；留空则软件自动创建并使用默认文件（data/投递.xlsx）。</div>'
@@ -273,6 +278,8 @@ function openSettings() {
   const bgPickEl = document.getElementById('set-bg-pickers');
   const remarkSwEl = document.getElementById('set-remark-swatches');
   const remarkColor = document.getElementById('set-remark-color');
+  const summarySwEl = document.getElementById('set-summary-swatches');
+  const summaryColor = document.getElementById('set-summary-color');
 
   scale.addEventListener('input', function () { cur.fontScale = +scale.value; scaleVal.textContent = scale.value + '%'; });
 
@@ -308,6 +315,14 @@ function openSettings() {
   renderRemark();
   remarkColor.addEventListener('input', function () { cur.remarkBg = this.value; renderRemark(); });
 
+  function renderSummary() {
+    summarySwEl.innerHTML = SUMMARY_PRESETS.map(function (c) {
+      return '<button class="swatch' + (cur.summaryBg === c ? ' on' : '') + '" style="background:' + c + '" data-summary="' + c + '"></button>';
+    }).join('');
+  }
+  renderSummary();
+  summaryColor.addEventListener('input', function () { cur.summaryBg = this.value; renderSummary(); });
+
   const dpInput = document.getElementById('set-datapath');
   document.getElementById('set-datapath-reset').addEventListener('click', function () { dpInput.value = ''; });
   document.getElementById('set-datapath-browse').addEventListener('click', async function () {
@@ -340,12 +355,17 @@ function openSettings() {
     if (!sw) return;
     if (sw.hasAttribute('data-remark')) { cur.remarkBg = sw.getAttribute('data-remark'); renderRemark(); }
   });
+  summarySwEl.addEventListener('click', function (e) {
+    const sw = e.target.closest('.swatch');
+    if (!sw) return;
+    if (sw.hasAttribute('data-summary')) { cur.summaryBg = sw.getAttribute('data-summary'); renderSummary(); }
+  });
 
   document.getElementById('set-reset').addEventListener('click', function () {
     Object.assign(cur, DEFAULT_SETTINGS);
     scale.value = cur.fontScale; scaleVal.textContent = cur.fontScale + '%';
     segBtns.forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-bgtype') === cur.bgType); });
-    renderBg(); renderRemark(); remarkColor.value = cur.remarkBg;
+    renderBg(); renderRemark(); remarkColor.value = cur.remarkBg; renderSummary(); summaryColor.value = cur.summaryBg;
   });
   document.getElementById('set-cancel').addEventListener('click', closeModal);
   document.getElementById('set-save').addEventListener('click', async function () {
@@ -651,6 +671,17 @@ document.getElementById('search-input').addEventListener('input', function () {
   render();
 });
 window.addEventListener('resize', layoutSummary);
+let lastScrollY = window.pageYOffset || 0;
+window.addEventListener('scroll', function () {
+  const y = window.pageYOffset || 0;
+  const fs = document.getElementById('focus-summary');
+  if (!fs || fs.style.display === 'none') return;
+  const delta = y - lastScrollY;
+  if (y <= 0) { fs.classList.remove('hidden'); }
+  else if (delta > 4) { fs.classList.add('hidden'); }
+  else if (delta < -4) { fs.classList.remove('hidden'); }
+  lastScrollY = y;
+}, { passive: true });
 
 async function load() {
   try {
