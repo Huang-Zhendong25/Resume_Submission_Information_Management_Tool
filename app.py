@@ -214,6 +214,8 @@ def load_legacy(path):
             'remark': '',
             'focus': False,
             'focusNote': '',
+            'focusDate': '',
+            'focusTime': '',
             'reason': None,
         })
     wb.close()
@@ -274,6 +276,8 @@ def load_canonical(path):
         if focus_val is not None:
             focus = str(focus_val).strip() in ('★', '是', '1', '重点关注', 'true', 'True')
         focus_note = getc(row, '重点标签')
+        focus_date = getc(row, '重点日期')
+        focus_time = getc(row, '重点时间')
         item = {
             'name': str(name).strip(),
             'month': month,
@@ -284,6 +288,8 @@ def load_canonical(path):
             'remark': str(remark).strip() if remark is not None else '',
             'focus': focus,
             'focusNote': str(focus_note).strip() if focus_note is not None else '',
+            'focusDate': str(focus_date).strip() if focus_date is not None else '',
+            'focusTime': str(focus_time).strip() if focus_time is not None else '',
             'reason': str(reason).strip() if reason is not None and str(reason).strip() else None,
         }
         if cur == 'eliminated':
@@ -360,17 +366,17 @@ def write_canonical(active, idle, eliminated, path):
     center = Alignment(horizontal='center', vertical='center', wrap_text=True)
     left = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
-    headers = ['企业名称', '投递时间', '投递状态', '投递岗位', '网址', '备注', '重点关注', '重点标签', '淘汰原因']
-    widths = [20, 11, 44, 34, 40, 26, 10, 26, 16]
+    headers = ['企业名称', '投递时间', '投递状态', '投递岗位', '网址', '备注', '重点关注', '重点标签', '重点日期', '重点时间', '淘汰原因']
+    widths = [20, 11, 44, 34, 40, 26, 10, 26, 12, 10, 16]
     for i, w in enumerate(widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
     def write_section(start_row, title, fill, items, is_elim):
         r = start_row
-        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=9)
+        ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=11)
         c = ws.cell(row=r, column=1, value=title)
         c.font = title_font
-        for col in range(1, 10):
+        for col in range(1, 12):
             ws.cell(row=r, column=col).fill = fill
         r += 1
         for col, h in enumerate(headers, 1):
@@ -390,6 +396,8 @@ def write_canonical(active, idle, eliminated, path):
                 it.get('remark', ''),
                 '★' if it.get('focus') else '',
                 it.get('focusNote', ''),
+                it.get('focusDate', ''),
+                it.get('focusTime', ''),
                 it.get('reason') or '',
             ]
             for col, v in enumerate(vals, 1):
@@ -405,7 +413,7 @@ def write_canonical(active, idle, eliminated, path):
             if it.get('focus'):
                 ws.cell(row=r, column=7).font = focus_font
             if is_elim:
-                ws.cell(row=r, column=9).font = reason_font
+                ws.cell(row=r, column=11).font = reason_font
             r += 1
         return r
 
@@ -448,6 +456,8 @@ def clean_item(it):
         'remark': str(it.get('remark', '')).strip(),
         'focus': bool(it.get('focus')),
         'focusNote': str(it.get('focusNote', '')).strip(),
+        'focusDate': str(it.get('focusDate', '')).strip(),
+        'focusTime': str(it.get('focusTime', '')).strip(),
         'reason': reason,
     }
 

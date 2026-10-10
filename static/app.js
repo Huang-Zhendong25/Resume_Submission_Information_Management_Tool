@@ -83,7 +83,9 @@ function starBtn(it) {
 }
 function focusBadge(it) {
   if (!it.focus) return '';
-  return '<div class="focus-badge" data-action="focus-edit" data-id="' + it.id + '" title="点击编辑重点标签">⏰ 重点：' + esc(it.focusNote || '未填写标签') + '</div>';
+  const parts = [it.focusDate, it.focusTime, it.focusNote].filter(function (x) { return x && String(x).trim(); });
+  const label = parts.join(' ') || '重点关注';
+  return '<div class="focus-badge" data-action="focus-edit" data-id="' + it.id + '" title="点击编辑重点信息">⏰ ' + esc(label) + '</div>';
 }
 
 function metaBlock(it) {
@@ -146,6 +148,36 @@ function matches(it) {
 }
 function filtered(arr) { return sortItems(arr).filter(matches); }
 
+function focusEvent(it) {
+  let date = (it.focusDate || '').trim();
+  let time = (it.focusTime || '').trim();
+  const note = (it.focusNote || '').trim();
+  if (!date) {
+    const dm = note.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日?/);
+    if (dm) date = (+dm[1]) + '月' + (+dm[2]) + '日';
+  }
+  if (!time) {
+    const tm = note.match(/(\d{1,2})\s*[:：]\s*(\d{1,2})/);
+    if (tm) time = tm[1] + ':' + (tm[2].length === 1 ? '0' + tm[2] : tm[2]);
+  }
+  return { date: date, time: time, note: note };
+}
+function periodOf(time) {
+  if (!time) return '全天';
+  const h = parseInt(time.split(':')[0], 10);
+  if (h < 12) return '上午';
+  if (h < 18) return '下午';
+  return '晚上';
+}
+function dateKey(d) {
+  const m = d.match(/(\d{1,2})月(\d{1,2})日/);
+  return m ? ((+m[1]) * 100 + (+m[2])) : 99999;
+}
+function timeKey(t) {
+  const m = t.match(/(\d{1,2}):(\d{2})/);
+  return m ? ((+m[1]) * 60 + (+m[2])) : 0;
+}
+
 function focusedItems() {
   return sortItems(state.active.concat(state.idle, state.eliminated).filter(function (it) { return it.focus; }));
 }
@@ -156,14 +188,49 @@ function renderFocusSummary() {
   if (!items.length) { container.style.display = 'none'; return; }
   container.style.display = 'block';
   document.getElementById('focus-summary-count').textContent = items.length;
-  document.getElementById('focus-summary-list').innerHTML = items.map(function (it) {
-    const note = it.focusNote || '重点关注';
-    return '<button class="focus-summary-item" data-action="focus-jump" data-id="' + it.id + '">'
-      + '<span class="fs-name">' + esc(it.name) + '</span>'
-      + '<span class="fs-sep">·</span>'
-      + '<span class="fs-note">' + esc(note) + '</span>'
-      + '</button>';
-  }).join('');
+
+  const events = items.map(function (it) { return { it: it, ev: focusEvent(it) }; });
+  const byDate = {};
+  const unscheduled = [];
+  events.forEach(function (x) {
+    if (x.ev.date) { (byDate[x.ev.date] = byDate[x.ev.date] || []).push(x); }
+    else { unscheduled.push(x); }
+  });
+  const dates = Object.keys(byDate).sort(function (a, b) { return dateKey(a) - dateKey(b); });
+  const hasAllDay = events.some(function (x) { return x.ev.date && !x.ev.time; });
+  const rows = hasAllDay ? ['上午', '下午', '晚上', '全天'] : ['上午', '下午', '晚上'];
+
+  let html = '<div class="sch-wrap"><table class="sch-table"><thead><tr><th>日期</th>';
+  dates.forEach(function (d) { html += '<th>' + esc(d) + '</th>'; });
+  html += '</tr></thead><tbody>';
+  rows.forEach(function (p) {
+    html += '<tr><td class="sch-period">' + p + '</td>';
+    dates.forEach(function (d) {
+      const evs = byDate[d].filter(function (x) { return periodOf(x.ev.time) === p; })
+        .sort(function (a, b) { return timeKey(a.ev.time) - timeKey(b.ev.time); });
+      if (evs.length) {
+        html += '<td class="sch-cell">' + evs.map(function (x) {
+          return '<div class="sch-event" data-action="focus-jump" data-id="' + x.it.id + '" title="点击定位">'
+            + (x.ev.time ? '<span class="sch-time">' + esc(x.ev.time) + '</span>' : '')
+            + '<span class="sch-name">' + esc(x.it.name) + '</span>'
+            + (x.ev.note ? '<span class="sch-note">' + esc(x.ev.note) + '</span>' : '')
+            + '</div>';
+        }).join('') + '</td>';
+      } else {
+        html += '<td class="sch-cell sch-free">空闲</td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  if (unscheduled.length) {
+    html += '<div class="sch-unscheduled">未安排时间：' + unscheduled.map(function (x) {
+      return '<span class="sch-event" data-action="focus-jump" data-id="' + x.it.id + '">' + esc(x.it.name) + (x.ev.note ? '<span class="sch-note">' + esc(x.ev.note) + '</span>' : '') + '</span>';
+    }).join('') + '</div>';
+  }
+
+  document.getElementById('focus-summary-list').innerHTML = html;
 }
 function layoutSummary() {
   const tb = document.querySelector('.topbar');
@@ -514,20 +581,33 @@ function openEliminate(id) {
 }
 
 function openFocusNote(item) {
+  const fm = (item.focusDate || '').match(/(\d{1,2})月(\d{1,2})日/);
+  const m = fm ? +fm[1] : '';
+  const d = fm ? +fm[2] : '';
   const html =
     '<h3>设置重点关注</h3>'
-    + '<p class="modal-sub">为「' + esc(item.name) + '」填写重点标签，例如节点或截止日期</p>'
-    + '<div class="field"><label>重点标签（手动输入）</label>'
-    + '<input type="text" id="fn-note" placeholder="例如：笔试截止 10月5日 10:00" value="' + esc(item.focusNote || '') + '"></div>'
+    + '<p class="modal-sub">为「' + esc(item.name) + '」填写事件描述、日期与时间（日期/时间可选）</p>'
+    + '<div class="field"><label>事件描述 <span style="color:#e5484d">*</span></label>'
+    + '<input type="text" id="fn-note" placeholder="例如：笔试截止 / 面试" value="' + esc(item.focusNote || '') + '"></div>'
+    + '<div class="field"><label>日期（月 / 日，可选）</label><div class="field-row">'
+    + '<select id="fn-month">' + monthOptions(m) + '</select>'
+    + '<select id="fn-day">' + dayOptions(d) + '</select></div></div>'
+    + '<div class="field"><label>具体时间（可选）</label>'
+    + '<input type="time" id="fn-time" value="' + esc(item.focusTime || '') + '"></div>'
     + '<div class="modal-foot"><button class="btn btn-plain" id="fn-cancel">取消</button>'
-    + '<button class="btn btn-primary" id="fn-save">设为重点关注</button></div>';
+    + '<button class="btn btn-primary" id="fn-save">保存</button></div>';
   openModal(html);
   document.getElementById('fn-cancel').addEventListener('click', closeModal);
   document.getElementById('fn-save').addEventListener('click', async function () {
     const note = document.getElementById('fn-note').value.trim();
-    if (!note) { showToast('请输入重点标签内容', true); return; }
+    if (!note) { showToast('请填写事件描述', true); return; }
+    const mm = document.getElementById('fn-month').value;
+    const dd = document.getElementById('fn-day').value;
+    const tt = document.getElementById('fn-time').value.trim();
     item.focus = true;
     item.focusNote = note;
+    item.focusDate = (mm && dd) ? mm + '月' + dd + '日' : '';
+    item.focusTime = tt;
     closeModal();
     render();
     await persist();
