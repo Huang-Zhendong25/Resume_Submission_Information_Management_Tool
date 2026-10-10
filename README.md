@@ -23,7 +23,7 @@
 ### Windows
 
 1. 双击 `安装依赖.bat` 安装依赖（或执行 `python -m pip install -r requirements.txt`）。
-2. 双击 `启动投递管理.vbs`（**无窗口启动，推荐**），浏览器会自动打开管理界面；也可双击 `启动投递管理.bat`（会显示控制台）。
+2. 双击 `启动投递管理.pyw`（**无窗口启动，推荐**），浏览器会自动打开管理界面；也可双击 `启动投递管理.vbs` 或 `启动投递管理.bat`（后两者可能显示控制台）。
 3. 若启动异常，可双击 `启动投递管理_调试.bat` 查看错误信息。
 
 ### macOS / Linux
@@ -82,7 +82,8 @@ python app.py
 │   ├── style.css          # 样式（浅色主题、圆角）
 │   └── app.js             # 前端逻辑
 ├── requirements.txt       # Python 依赖
-├── 启动投递管理.vbs        # Windows 无窗口一键启动（推荐，自动安装依赖）
+├── 启动投递管理.pyw        # Windows 无窗口一键启动（推荐）
+├── 启动投递管理.vbs        # Windows 无窗口启动（备用）
 ├── 启动投递管理.bat        # Windows 控制台启动（备用）
 ├── 启动投递管理_调试.bat    # Windows 调试启动（显示控制台）
 ├── 安装依赖.bat            # Windows 安装依赖

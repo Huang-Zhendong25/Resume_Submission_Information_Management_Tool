@@ -24,7 +24,14 @@ try:
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
 except ImportError:
-    print('缺少依赖 openpyxl，请先运行：pip install -r requirements.txt')
+    _msg = '缺少依赖 openpyxl，请先运行：pip install -r requirements.txt'
+    print(_msg)
+    if sys.stdout is None or os.path.basename(sys.executable).lower() == 'pythonw.exe':
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(0, _msg, '投递管理', 0x10)
+        except Exception:
+            pass
     raise SystemExit(1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
